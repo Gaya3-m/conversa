@@ -1,7 +1,5 @@
 import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser"
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { logout } from "../lib/api.js";
 import {BellIcon, GhostIcon, LogOutIcon} from "lucide-react"
 import ThemeSelector from "./ThemeSelector.jsx";
 import useLogout from "../hooks/useLogout.js";

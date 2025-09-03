@@ -40,7 +40,7 @@ const OnboardingPage = () => {
 
   const handleRandomAvatar=()=>{
     const ind=Math.floor(Math.random() * 100)+1;
-    const randomAvatar=`https://avatar.iran.liara.ru/public/${ind}.png`;
+    const randomAvatar=`https://avatar.iran.liara.run/public/${ind}.png`;
     setFormState({...formState, profilePic: randomAvatar})
     toast.success("Random profilepic generated");
   }
