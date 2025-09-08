@@ -60,8 +60,8 @@ export async function sendFriendRequest(req, res){
         //check if you already sent a friend request to this user
         const existingRequest=await FriendRequest.findOne({
             $or:[
-                {sender: myId, receiver: recipientId},
-                {sender: recipientId, receiver: myId}
+                {sender: myId, recipient: recipientId},
+                {sender: recipientId, recipient: myId}
             ]
         })
 
@@ -71,7 +71,7 @@ export async function sendFriendRequest(req, res){
 
         const friendRequest=await FriendRequest.create({
             sender: myId,
-            receiver: recipientId,
+            recipient: recipientId,
         });
         res.status(201).json(friendRequest);        
     }
@@ -91,7 +91,7 @@ export async function acceptFriendRequest(req, res){
             return res.status(404).json({message: "Friend request not found"});
         }
 
-        if(friendRequest.receiver.toString()!==myId){
+        if(friendRequest.recipient.toString()!==myId){
             return res.status(403).json({message: "You are not authorized to accept this friend request"});
         }
 
@@ -100,10 +100,10 @@ export async function acceptFriendRequest(req, res){
 
         //add each other to friends list
         await User.findByIdAndUpdate(friendRequest.sender, {
-            $addToSet: { friends: friendRequest.receiver },
+            $addToSet: { friends: friendRequest.recipient },
         });
 
-        await User.findByIdAndUpdate(friendRequest.receiver, {
+        await User.findByIdAndUpdate(friendRequest.recipient, {
             $addToSet: { friends: friendRequest.sender },
         });
 
@@ -117,20 +117,23 @@ export async function acceptFriendRequest(req, res){
 
 export async function getFriendRequests(req, res){
     try{
-        const incomingRequests=await FriendRequest.find({
-            receiver: req.user.id,
+        const userId = req.user.id;
+
+        // Incoming pending requests
+        const incomingRequests = await FriendRequest.find({
+            recipient: userId,
             status:"pending",
         }).populate("sender", "fullName profilePic nativeLanguage learningLanguage");
 
-        const acceptedRequests=await FriendRequest.find({
-            receiver: req.user.id,
-            status: "accepted",
-        }).populate("sender", "fullName profilePic nativeLanguage learningLanguage");
-
-        res.status(200).json({
-            incomingRequests,
-            acceptedRequests,
+        // Accepted requests where user is sender or recipient
+        const acceptedRequests = await FriendRequest.find({
+            $or: [
+                {sender: userId, status: "accepted"}
+            ]
         })
+        .populate("recipient", "fullName profilePic");
+
+        res.status(200).json({ incomingRequests, acceptedRequests });
     }
     catch(error){
         console.error("Error in getFriendRequests controller:", error.message);
@@ -143,7 +146,7 @@ export async function getOutgoingFriendReqs(req, res){
         const outgoingRequests=await FriendRequest.find({
             sender: req.user.id,
             status: "pending",
-        }).populate("receiver", "fullName profilePic nativeLanguage learningLanguage");
+        }).populate("recipient", "fullName profilePic nativeLanguage learningLanguage");
 
         res.status(200).json(outgoingRequests);
     }
